@@ -38,6 +38,14 @@ def register():
         errors['password'] = 'Password is required'
     elif len(data['password']) < 8:
         errors['password'] = 'Password must be at least 8 characters'
+    if not data.get('pincode') or not re.match(r'^\d{6}$', data['pincode']):
+        errors['pincode'] = 'Please enter a valid 6-digit pincode'
+    if not data.get('address'):
+        errors['address'] = 'Address is required'
+    if data['role'] == 'customer' and not data.get('krishiBhavanId'):
+        errors['krishiBhavanId'] = 'Krishi-Bhavan ID is required'
+    if data['role'] == 'seller' and not data.get('krishiBhavan'):
+        errors['krishiBhavan'] = 'Please select a Krishi-Bhavan'
 
     if errors:
         logger.error("Validation errors: %s", errors)
@@ -51,10 +59,12 @@ def register():
         'name': data['name'],
         'email': data['email'],
         'phone': data.get('phone'),
-        'address': data.get('address'),
-        'pincode': data.get('pincode'),
+        'address': data['address'],
+        'pincode': data['pincode'],
         'password': hashed_password,
-        'role': data['role']
+        'role': data['role'],
+        'krishiBhavanId': data.get('krishiBhavanId') if data['role'] == 'customer' else None,
+        'krishiBhavan': data.get('krishiBhavan') if data['role'] == 'seller' else None
     }
     users_collection.insert_one(user)
     logger.info("User registered successfully: %s", user)
@@ -87,7 +97,9 @@ def login():
         'phone': user['phone'],
         'address': user['address'],
         'pincode': user['pincode'],
-        'role': user['role']
+        'role': user['role'],
+        'krishiBhavanId': user.get('krishiBhavanId'),
+        'krishiBhavan': user.get('krishiBhavan')
     }
     logger.info("User logged in successfully: %s", user_data)
     return jsonify(user_data), 200

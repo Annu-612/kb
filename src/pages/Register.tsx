@@ -12,7 +12,9 @@ export const Register = () => {
     pincode: '',
     password: '',
     confirmPassword: '',
-    role: 'customer' as 'customer' | 'seller'
+    role: 'customer' as 'customer' | 'seller',
+    krishiBhavanId: '',
+    krishiBhavan: 'krishiBhavan1' // Set default value to 'krishiBhavan1'
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { register, isLoading, error, isAuthenticated, user, clearError } = useAuthStore();
@@ -61,6 +63,14 @@ export const Register = () => {
 
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (formData.role === 'customer' && !formData.krishiBhavanId.trim()) {
+      newErrors.krishiBhavanId = 'Krishi-Bhavan ID is required';
+    }
+
+    if (formData.role === 'seller' && !formData.krishiBhavan.trim()) {
+      newErrors.krishiBhavan = 'Please select a Krishi-Bhavan';
     }
 
     setErrors(newErrors);
@@ -223,6 +233,49 @@ export const Register = () => {
                 <option value="seller">Seller (Krishi-Bahavan Office)</option>
               </select>
             </div>
+
+            {formData.role === 'customer' && (
+              <div>
+                <label htmlFor="krishiBhavanId" className="block text-sm font-medium text-gray-700 mb-2">
+                  Krishi-Bhavan ID
+                </label>
+                <input
+                  id="krishiBhavanId"
+                  name="krishiBhavanId"
+                  type="text"
+                  value={formData.krishiBhavanId}
+                  onChange={handleChange}
+                  className={`w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    errors.krishiBhavanId ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your Krishi-Bhavan ID"
+                  required
+                />
+                {errors.krishiBhavanId && <p className="mt-1 text-sm text-red-600">{errors.krishiBhavanId}</p>}
+              </div>
+            )}
+
+            {formData.role === 'seller' && (
+              <div>
+                <label htmlFor="krishiBhavan" className="block text-sm font-medium text-gray-700 mb-2">
+                  Choose Krishi-Bhavan
+                </label>
+                <select
+                  id="krishiBhavan"
+                  name="krishiBhavan"
+                  value={formData.krishiBhavan}
+                  onChange={handleChange}
+                  className={`w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    errors.krishiBhavan ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  required
+                >
+                  <option value="krishiBhavan1">Krishi-Bhavan1</option>
+                  <option value="krishiBhavan2">Krishi-Bhavan2</option>
+                </select>
+                {errors.krishiBhavan && <p className="mt-1 text-sm text-red-600">{errors.krishiBhavan}</p>}
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">

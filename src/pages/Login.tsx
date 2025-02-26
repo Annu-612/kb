@@ -21,7 +21,7 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    await login(email, password);
+    await login(email, password); // No need to pass role to login
   };
 
   return (
