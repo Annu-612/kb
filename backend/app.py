@@ -104,5 +104,63 @@ def login():
     logger.info("User logged in successfully: %s", user_data)
     return jsonify(user_data), 200
 
+from bson import ObjectId  # Import ObjectId for MongoDB queries
+
+@app.route('/update-profile', methods=['PUT'])
+def update_profile():
+    data = request.get_json()
+    user_id = data.get('userId')
+
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
+
+    try:
+        user_id = ObjectId(user_id)  # Convert string to MongoDB ObjectId
+    except:
+        return jsonify({'error': 'Invalid user ID format'}), 400
+
+    # Fetch existing user data to compare changes
+    existing_user = users_collection.find_one({"_id": user_id}, {"password": 0})
+    if not existing_user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Build an update dictionary with only changed fields
+    updated_data = {}
+    for field in ["name", "email", "phone", "address", "pincode"]:
+        if field in data and data[field] and data[field] != existing_user.get(field):
+            updated_data[field] = data[field]
+
+    if not updated_data:  # No changes detected
+        return jsonify({'error': 'No updates were made'}), 400
+
+    # Update the user in MongoDB
+    result = users_collection.update_one({"_id": user_id}, {"$set": updated_data})
+
+    if result.modified_count == 0:
+        return jsonify({'error': 'Failed to update profile'}), 400
+
+    # Fetch the updated user data
+    updated_user = users_collection.find_one({"_id": user_id}, {"password": 0})  # Exclude password
+
+    return jsonify({'message': 'Profile updated successfully', 'user': updated_user}), 200
+# app.py
+
+@app.route('/user/<user_id>', methods=['GET'])
+def get_user_profile(user_id):
+    # Fetch the user profile from the database
+    user = db.users.find_one({'_id': ObjectId(user_id)})
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    return jsonify({
+        'id': str(user['_id']),
+        'name': user['name'],
+        'email': user['email'],
+        'phone': user['phone'],
+        'address': user['address'],
+        # include any other fields you want to send back
+    })
+
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { format } from 'date-fns';
 import type { Booking } from '../types';
 
+
 // Mock bookings data - replace with actual API call in production
 const mockBookings: Booking[] = [
   {
@@ -53,22 +54,62 @@ export const Profile = () => {
     navigate('/login');
     return null;
   }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
-    try {
-      // Mock API call - replace with actual update
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  
+    // Find changes in the form data
+    const updates: Partial<typeof formData> = {};
+    Object.keys(formData).forEach((key) => {
+      if (formData[key as keyof typeof formData] !== user[key as keyof typeof user]) {
+        updates[key as keyof typeof formData] = formData[key as keyof typeof formData];
+      }
+    });
+  
+    // If no changes, return early
+    if (Object.keys(updates).length === 0) {
       setIsEditing(false);
-      // Update user info in store
+      setIsSaving(false);
+      return;
+    }
+  
+    try {
+      // Call the update profile API
+      const response = await fetch('http://localhost:5000/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,  // Send the current user's ID
+          ...updates,  // Send only the fields that have changed
+        }),
+      });
+  
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to update profile');
+  
+      // Fetch updated user profile after successful update
+      const updatedUserResponse = await fetch(`http://localhost:5000/user/${user.id}`);
+      const updatedUser = await updatedUserResponse.json();
+      
+      if (updatedUserResponse.ok) {
+        // Update the global store with updated user data
+        useAuthStore.setState({ user: updatedUser });
+      } else {
+        throw new Error(updatedUser.error || 'Failed to fetch updated user data');
+      }
+  
+      setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      console.error('Error updating profile:', error);
     } finally {
       setIsSaving(false);
     }
   };
+  
+  
+  
 
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {
